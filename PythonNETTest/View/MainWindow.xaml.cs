@@ -26,37 +26,21 @@ using System.Windows.Markup;
 using System.IO.Pipes;
 using System.Reflection;
 using UnitsNet;
+using API520.ViewModel;
 
-namespace PythonNETTest
+namespace API520
 {
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
     public partial class MainWindow : Window
     {
-        public API520Calc APICalc;
+        public APISteamReliefSizingViewModel APICalc;
 
         public MainWindow()
         {
             InitializeComponent();
-            APICalc = new API520Calc();
-            DataContext = APICalc;
-
-            APICalc.PropertyChanged += APICalc_PropertyChanged;
-        }
-
-        private void APICalc_PropertyChanged(object sender, PropertyChangedEventArgs e)
-        {
-            if (e.PropertyName == "H_SI" && double.IsNaN(APICalc.H_SI))
-                EnthalpyTBox.IsEnabled = true;
-            else if (e.PropertyName == "H_SI" && !double.IsNaN(APICalc.H_SI))
-                EnthalpyTBox.IsEnabled = false;
-        }
-
-        private void NumberValidationTextBox(object sender, TextCompositionEventArgs e)
-        {
-            Regex regex = new Regex("[^0-9,-]+");
-            e.Handled = regex.IsMatch(e.Text);
+            DataContext = new MainViewModel();
         }
 
         private void TestButton_Click(object sender, RoutedEventArgs e)

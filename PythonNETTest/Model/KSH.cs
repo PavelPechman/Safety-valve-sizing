@@ -10,7 +10,7 @@ using System.Text;
 using System.Threading.Tasks;
 using UnitsNet;
 
-namespace PythonNETTest
+namespace API520
 {
     public class KSH
     {
@@ -36,8 +36,6 @@ namespace PythonNETTest
             foreach(string name in ColNames)
                 if(double.TryParse(name, out double value))
                     TemperatureAxis.Add(value);
-                else
-                    TemperatureAxis.Add(double.NaN);
 
             MinimumTemperature = TemperatureAxis.ElementAt(1);
             MaximumTemperature = TemperatureAxis.Last();
@@ -96,6 +94,7 @@ namespace PythonNETTest
                     lowerTemperatureColumn[lowPress], lowerTemperatureColumn[highPress]);
                 double highTempKSH = LinearInterpolation(lowPress, highPress, pressure,
                     higherTemperatureColumn[lowPress], higherTemperatureColumn[highPress]);
+
                 double KSH = LinearInterpolation(lowTemp, highTemp, temperature,
                     lowTempKSH, highTempKSH);
 
@@ -111,13 +110,20 @@ namespace PythonNETTest
 
         private double LinearInterpolation(double axisA, double axisB, double axisC, double valueA, double valueB)
         {
-            return (axisC - axisA) * (valueB - valueA) / (axisB - axisA) + valueA;
+            if(axisA == axisB && valueA == valueB)
+                return valueA;
+            else
+                return (axisC - axisA) * (valueB - valueA) / (axisB - axisA) + valueA;
         }
 
         private double GetNeighbourValue(List<double> list, double referenceValue, SearchDirection dir)
         {
             for (int i = 0; i < list.Count; i++)
-                if(list[i] < referenceValue && list[i+1] > referenceValue)
+                if (i == 0 && referenceValue < list[i])
+                    return list[i];
+                else if (i == list.Count - 1 && referenceValue > list[i])
+                    return list[i];
+                else if(list[i] < referenceValue && list[i+1] > referenceValue)
                     if(dir == SearchDirection.Lower)
                         return list[i];
                     else if (dir == SearchDirection.Higher)

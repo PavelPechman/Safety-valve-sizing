@@ -10,9 +10,9 @@ using System.Text;
 using System.Threading.Tasks;
 using UnitsNet;
 
-namespace PythonNETTest
+namespace API520.ViewModel
 {
-    public class API520Calc : INotifyPropertyChanged
+    public class APISteamReliefSizingViewModel : BaseViewModel, INotifyPropertyChanged
     {
         #region DataStorage
         private double t_SI;
@@ -48,9 +48,9 @@ namespace PythonNETTest
                 var gil = PyInit(PythonDllPath);
                 try
                 {
-                    H_SI = Math.Round((double)GetSteamTable().h_pt(P1_SI, T_SI), 3);
+                    H_SI = Math.Round((double)GetSteamTable().h_pt(PSet + 1, T_SI), 3);
                     if(H_SI != double.NaN)
-                        X_SI = Math.Round((double)GetSteamTable().x_ph(P1_SI, H_SI), 3);
+                        X_SI = Math.Round((double)GetSteamTable().x_ph(PSet + 1, H_SI), 3);
                 }
                 finally
                 {
@@ -81,17 +81,6 @@ namespace PythonNETTest
                 p1_SI = value;
                 KN = GetKN(P1_SI);
                 InvokeChange(nameof(P1_SI));
-
-                var gil = PyInit(PythonDllPath);
-                try
-                {
-                    H_SI = Math.Round((double)GetSteamTable().h_pt(P1_SI, T_SI), 3);
-                    X_SI = Math.Round((double)GetSteamTable().x_ph(P1_SI, H_SI), 3);
-                }
-                finally
-                {
-                    gil.Dispose();
-                }
             }
         } // upstream relieving pressure [bar(a)] (set pressure + atmospheric pressure + allowable overpressure)
         public double H_SI
@@ -190,6 +179,17 @@ namespace PythonNETTest
                 P1_SI = (value + atmosphericPressure.Bars) * allowableOverpressure; // + atmospheric pressure, * 10% overpressure 
                 KSH = ksh.GetKSH(PSet, T_SI);
                 InvokeChange(nameof(PSet));
+
+                var gil = PyInit(PythonDllPath);
+                try
+                {
+                    H_SI = Math.Round((double)GetSteamTable().h_pt(PSet + 1, T_SI), 3);
+                    X_SI = Math.Round((double)GetSteamTable().x_ph(PSet + 1, H_SI), 3);
+                }
+                finally
+                {
+                    gil.Dispose();
+                }
             }
         } // set pressure bar(g)
         public double DischargeArea
@@ -209,11 +209,10 @@ namespace PythonNETTest
 
         #region Events
         public event PropertyChangedEventHandler PropertyChanged;
-        public event NotifyCollectionChangedEventHandler CollectionChanged;
         #endregion
 
         #region Constructor
-        public API520Calc()
+        public APISteamReliefSizingViewModel()
         {
             //KN = GetKN(P1USC);
             //KSH = GetKSH(P1USC);
@@ -260,8 +259,6 @@ namespace PythonNETTest
             }
 
         }
-
-
 
         #region Methods
         /// <summary>
