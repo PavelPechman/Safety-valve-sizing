@@ -38,16 +38,24 @@ namespace API520.View
 
         private void APICalc_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
-            if (e.PropertyName == nameof(APICalc.Enthalpy_SI) && APICalc.Enthalpy_SI == -1)
-                EnthalpyTBox.IsEnabled = true;
-            else if (e.PropertyName == nameof(APICalc.Enthalpy_SI) && !(APICalc.Enthalpy_SI == -1))
-                EnthalpyTBox.IsEnabled = false;
+            if (e.PropertyName == nameof(APICalc.IsSaturated))
+                EnthalpyTBox.IsEnabled = APICalc.IsSaturated;
         }
 
         private void NumberValidationTextBox(object sender, TextCompositionEventArgs e)
         {
             Regex regex = new Regex("[^0-9,-]+");
             e.Handled = regex.IsMatch(e.Text);
+        }
+
+        private void SaturationTemperature_Button_Click(object sender, RoutedEventArgs e)
+        {
+            APICalc.SetSaturationTemperature();
+        }
+
+        private void EnthalpyTBox_LostFocus(object sender, RoutedEventArgs e)
+        {
+            APICalc.EnthalpySetManually = true;
         }
     }
 }

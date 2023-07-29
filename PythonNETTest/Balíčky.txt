@@ -1,0 +1,4 @@
+Pythonnet
+Jace - vzorce
+UnitsNet - jednotky
+pyXsteam - tabulky pára-voda

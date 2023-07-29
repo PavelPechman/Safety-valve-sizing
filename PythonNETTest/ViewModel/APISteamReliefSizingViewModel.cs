@@ -34,6 +34,7 @@ namespace API520.ViewModel
         private double _kN;
         private KSH _kSH = new KSH();
         private Area _dischargeArea = new Area();
+        private bool _isSaturated = false;
         #endregion
 
         #region Properties
@@ -49,17 +50,10 @@ namespace API520.ViewModel
                 KSH = _kSH.GetKSH(P1_SI, Temperature_SI);
                 InvokeChange(nameof(Temperature_SI));
 
-                var gil = PyInit(PythonDllPath);
-                try
-                {
-                    Enthalpy_SI = Math.Round((double)GetSteamTable().h_pt(PSet_SI + 1, Temperature_SI), 3);
-                    if (Enthalpy_SI != double.NaN)
-                        VapourFraction = Math.Round((double)GetSteamTable().x_ph(PSet_SI + 1, Enthalpy_SI), 3);
-                }
-                finally
-                {
-                    gil.Dispose();
-                }
+                if(!EnthalpySetManually)
+                    Enthalpy_SI = (double)GetSteamTable().h_pt(PSet_SI + 1, Temperature_SI);
+                else
+                    EnthalpySetManually = false;
             }
         } // Valve inlet steam temperature [°C]
         public double MassFlow_SI
@@ -95,10 +89,17 @@ namespace API520.ViewModel
             }
             set
             {
-                if (!Double.IsNaN(value))
+                if (!double.IsNaN(value))
+                {
                     _enthalpy = SpecificEnergy.FromKilojoulesPerKilogram(value);
+                    VapourFraction = (double)GetSteamTable().x_ph(PSet_SI + 1, Enthalpy_SI);
+                    if (EnthalpySetManually)
+                        Temperature_SI = (double)GetSteamTable().t_ph(PSet_SI + 1, Enthalpy_SI);
+                }
                 else
-                    _enthalpy = SpecificEnergy.FromKilojoulesPerKilogram(-1);
+                {
+                    _enthalpy = SpecificEnergy.FromKilojoulesPerKilogram(0);
+                }
                 InvokeChange(nameof(Enthalpy_SI));
             }
         } // upstream relieving enthalpy [kJ/kg] 
@@ -190,8 +191,7 @@ namespace API520.ViewModel
                 var gil = PyInit(PythonDllPath);
                 try
                 {
-                    Enthalpy_SI = Math.Round((double)GetSteamTable().h_pt(PSet_SI + 1, Temperature_SI), 3);
-                    VapourFraction = Math.Round((double)GetSteamTable().x_ph(PSet_SI + 1, Enthalpy_SI), 3);
+                    Enthalpy_SI = (double)GetSteamTable().h_pt(PSet_SI + 1, Temperature_SI);
                 }
                 finally
                 {
@@ -211,6 +211,19 @@ namespace API520.ViewModel
                 InvokeChange(nameof(DischargeArea_SI));
             }
         }
+        public bool IsSaturated
+        {
+            get
+            {
+                return _isSaturated;
+            }
+            set
+            { 
+                _isSaturated = value;
+                InvokeChange(nameof(IsSaturated));
+            }
+        }
+        public bool EnthalpySetManually = false;
         #endregion
 
         #region Events
@@ -218,15 +231,25 @@ namespace API520.ViewModel
 
         private void APISteamReliefSizingViewModel_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
+            // Update of discharge area
             if(e.PropertyName != nameof(DischargeArea_SI))
                 try
                 {
                     DischargeArea_SI = GetDischargeArea();
                 }
-                catch (Exception)
-                {
-                    Trace.WriteLine("Insufficient input");
-                }
+                catch (Exception) { }
+
+            // Check for saturation
+            if (e.PropertyName == nameof(Temperature_SI) ||
+                e.PropertyName == nameof(PSet_SI) ||
+                e.PropertyName == nameof(Enthalpy_SI))
+            {
+                double x = (double)GetSteamTable().x_ph(PSet_SI + 1, Enthalpy_SI);
+                if (Enthalpy_SI == 0 || (x > 0 && x < 1))
+                    IsSaturated = true;
+                else
+                    IsSaturated = false;
+            }
         }
         #endregion
 
@@ -287,16 +310,12 @@ namespace API520.ViewModel
 
         public double GetDischargeArea()
         {
-            //Pressure pressure = Pressure.FromBars(P1_SI);
-            //MassFlow massFlow = MassFlow.FromKilogramsPerSecond(W_SI);
             Area area;
 
             double W_USC = _massFlow.PoundsPerHour;
             double P1_USC = _p1.PoundsForcePerSquareInch;
 
-            Environment.SetEnvironmentVariable("PYTHONNET_PYDLL", PythonDllPath);
-            PythonEngine.Initialize();
-            var gil = Py.GIL();
+            var gil = PyInit(PythonDllPath);
             try
             {
 
@@ -324,6 +343,20 @@ namespace API520.ViewModel
                 gil.Dispose();
             }
 
+        }
+
+        public void SetSaturationTemperature()
+        {
+            var gil = PyInit(PythonDllPath);
+            try
+            {
+                Temperature_SI = (double)GetSteamTable().tsat_p(PSet_SI + 1);
+                IsSaturated = true;
+            }
+            finally
+            {
+                gil.Dispose();
+            }
         }
         #endregion
 
