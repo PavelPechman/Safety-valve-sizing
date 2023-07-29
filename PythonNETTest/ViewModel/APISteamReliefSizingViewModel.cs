@@ -8,114 +8,121 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
 using UnitsNet;
 
 namespace API520.ViewModel
 {
     public class APISteamReliefSizingViewModel : BaseViewModel, INotifyPropertyChanged
     {
+        #region Constants
+        private readonly Pressure AtmosphericPressure = Pressure.FromKilopascals(101);
+        private double AllowableOverpressure = 1.1;
+        private string PythonDllPath = @"C:\Users\pechm\AppData\Local\Programs\Python\Python311\python311.dll";
+        #endregion
+
         #region DataStorage
-        private double t_SI;
-        private double w_SI;
-        private double p1_SI;
-        private double h_SI;
-        private double x_SI;
-        private double kd = 0.975;
-        private double kb = 1.0;
-        private double kc = 1.0;
-        private double kN;
-        private double kSH;
-        private KSH ksh = new KSH();
-        private double dischargeArea;
-        private double pSet;
-        private double allowableOverpressure = 1.1;
-        Pressure atmosphericPressure = Pressure.FromKilopascals(101);
+        private Temperature _temperature = new Temperature(0, UnitsNet.Units.TemperatureUnit.DegreeCelsius);
+        private MassFlow _massFlow = new MassFlow();
+        private Pressure _p1 = new Pressure();
+        private Pressure _pSet = new Pressure();
+        private SpecificEnergy _enthalpy = new SpecificEnergy();
+        private double _vapourFraction;
+        private double _kd = 0.975;
+        private double _kb = 1.0;
+        private double _kc = 1.0;
+        private double _kN;
+        private KSH _kSH = new KSH();
+        private Area _dischargeArea = new Area();
         #endregion
 
         #region Properties
-        public double T_SI
+        public double Temperature_SI
         {
-            get 
+            get
             {
-                return t_SI;
+                return _temperature.DegreesCelsius;
             }
             set
             {
-                t_SI = value;
-                KSH = ksh.GetKSH(P1_SI, T_SI);
-                InvokeChange(nameof(T_SI));
+                _temperature = Temperature.FromDegreesCelsius(value);
+                KSH = _kSH.GetKSH(P1_SI, Temperature_SI);
+                InvokeChange(nameof(Temperature_SI));
 
                 var gil = PyInit(PythonDllPath);
                 try
                 {
-                    H_SI = Math.Round((double)GetSteamTable().h_pt(PSet + 1, T_SI), 3);
-                    if(H_SI != double.NaN)
-                        X_SI = Math.Round((double)GetSteamTable().x_ph(PSet + 1, H_SI), 3);
+                    Enthalpy_SI = Math.Round((double)GetSteamTable().h_pt(PSet_SI + 1, Temperature_SI), 3);
+                    if (Enthalpy_SI != double.NaN)
+                        VapourFraction = Math.Round((double)GetSteamTable().x_ph(PSet_SI + 1, Enthalpy_SI), 3);
                 }
                 finally
                 {
                     gil.Dispose();
                 }
             }
-        } // steam temperature [°C]
-        public double W_SI
+        } // Valve inlet steam temperature [°C]
+        public double MassFlow_SI
         {
             get
             {
-                return w_SI;
+                return _massFlow.KilogramsPerSecond;
             }
             set
             {
-                w_SI = value;
-                InvokeChange(nameof(W_SI));
+                _massFlow = MassFlow.FromKilogramsPerSecond(value);
+                InvokeChange(nameof(MassFlow_SI));
             }
         } // Required flow rate [kg/s]
         public double P1_SI
         {
             get
             {
-                return p1_SI;
+                return _p1.Bars;
             }
             set
             {
-                p1_SI = value;
+                _p1 = Pressure.FromBars(value);
                 KN = GetKN(P1_SI);
                 InvokeChange(nameof(P1_SI));
             }
         } // upstream relieving pressure [bar(a)] (set pressure + atmospheric pressure + allowable overpressure)
-        public double H_SI
+        public double Enthalpy_SI
         {
             get
             {
-                return h_SI;
+                return _enthalpy.KilojoulesPerKilogram;
             }
             set
             {
-                h_SI = value;
-                InvokeChange(nameof(H_SI));
+                if (!Double.IsNaN(value))
+                    _enthalpy = SpecificEnergy.FromKilojoulesPerKilogram(value);
+                else
+                    _enthalpy = SpecificEnergy.FromKilojoulesPerKilogram(-1);
+                InvokeChange(nameof(Enthalpy_SI));
             }
         } // upstream relieving enthalpy [kJ/kg] 
-        public double X_SI
+        public double VapourFraction
         {
             get
             {
-                return x_SI;
+                return _vapourFraction;
             }
             set
             {
-                x_SI = value;
-                InvokeChange(nameof(X_SI));
+                _vapourFraction = value;
+                InvokeChange(nameof(VapourFraction));
             }
         } // steam dryness factor [-] 
         public double Kd
         {
             get
             {
-                return kd;
+                return _kd;
             }
             set
             {
-                kd = value;
+                _kd = value;
                 InvokeChange(nameof(Kd));
             }
         } // effective coefficient of discharge (0.65 for rupture disc)
@@ -123,11 +130,11 @@ namespace API520.ViewModel
         {
             get
             {
-                return kb;
+                return _kb;
             }
             set
             {
-                kb = value;
+                _kb = value;
                 InvokeChange(nameof(Kb));
             }
         } // capacity correction factor due to backpressure (different only if bellows are used)
@@ -135,11 +142,11 @@ namespace API520.ViewModel
         {
             get
             {
-                return kc;
+                return _kc;
             }
             set
             {
-                kc = value;
+                _kc = value;
                 InvokeChange(nameof(Kc));
             }
         } // combination correction factor for installations with a rupture disk upstream of the PRV (0.9 with RD)
@@ -147,11 +154,11 @@ namespace API520.ViewModel
         {
             get
             {
-                return kN;
+                return _kN;
             }
             set
             {
-                kN = value;
+                _kN = value;
                 InvokeChange(nameof(KN));
             }
         } // correction factor for the Napier equation
@@ -159,32 +166,32 @@ namespace API520.ViewModel
         {
             get
             {
-                return kSH;
+                return _kSH.GetKSH(P1_SI, Temperature_SI);
             }
             set
             {
-                kSH = value;
+                //_kSH = value;
                 InvokeChange(nameof(KSH));
             }
         } // superheat correction factor
-        public double PSet
+        public double PSet_SI
         {
             get
             { 
-                return pSet;
+                return _pSet.Bars;
             }
             set
             {
-                pSet = value;
-                P1_SI = (value + atmosphericPressure.Bars) * allowableOverpressure; // + atmospheric pressure, * 10% overpressure 
-                KSH = ksh.GetKSH(PSet, T_SI);
-                InvokeChange(nameof(PSet));
+                _pSet = Pressure.FromBars(value);
+                P1_SI = (value + AtmosphericPressure.Bars) * AllowableOverpressure;
+                KSH = _kSH.GetKSH(PSet_SI, Temperature_SI);
+                InvokeChange(nameof(PSet_SI));
 
                 var gil = PyInit(PythonDllPath);
                 try
                 {
-                    H_SI = Math.Round((double)GetSteamTable().h_pt(PSet + 1, T_SI), 3);
-                    X_SI = Math.Round((double)GetSteamTable().x_ph(PSet + 1, H_SI), 3);
+                    Enthalpy_SI = Math.Round((double)GetSteamTable().h_pt(PSet_SI + 1, Temperature_SI), 3);
+                    VapourFraction = Math.Round((double)GetSteamTable().x_ph(PSet_SI + 1, Enthalpy_SI), 3);
                 }
                 finally
                 {
@@ -192,73 +199,43 @@ namespace API520.ViewModel
                 }
             }
         } // set pressure bar(g)
-        public double DischargeArea
+        public double DischargeArea_SI
         {
             get
             {
-                return dischargeArea;
+                return _dischargeArea.SquareMillimeters;
             }
             set
             {
-                InvokeChange(nameof(DischargeArea));
+                _dischargeArea = Area.FromSquareMillimeters(value);
+                InvokeChange(nameof(DischargeArea_SI));
             }
         }
-
-        private string PythonDllPath = @"C:\Users\pechm\AppData\Local\Programs\Python\Python311\python311.dll";
         #endregion
 
         #region Events
         public event PropertyChangedEventHandler PropertyChanged;
+
+        private void APISteamReliefSizingViewModel_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if(e.PropertyName != nameof(DischargeArea_SI))
+                try
+                {
+                    DischargeArea_SI = GetDischargeArea();
+                }
+                catch (Exception)
+                {
+                    Trace.WriteLine("Insufficient input");
+                }
+        }
         #endregion
 
         #region Constructor
         public APISteamReliefSizingViewModel()
         {
-            //KN = GetKN(P1USC);
-            //KSH = GetKSH(P1USC);
+            this.PropertyChanged += APISteamReliefSizingViewModel_PropertyChanged;
         }
         #endregion
-
-        public double GetDischargeArea()
-        {
-            Pressure pressure = Pressure.FromBars(P1_SI);
-            MassFlow massFlow = MassFlow.FromKilogramsPerSecond(W_SI);
-            Area area = new Area();
-
-            double W_USC = massFlow.PoundsPerHour;
-            double P1_USC = pressure.PoundsForcePerSquareInch;
-
-            Environment.SetEnvironmentVariable("PYTHONNET_PYDLL", PythonDllPath);
-            PythonEngine.Initialize();
-            var gil = Py.GIL();
-            try
-            {
-                
-                Dictionary<string, double> variables = new Dictionary<string, double>();
-                variables.Add("W", W_USC);
-                variables.Add("P1", P1_USC);
-                variables.Add(nameof(Kd), Kd);
-                variables.Add(nameof(Kb), Kb);
-                variables.Add(nameof(Kc), Kc);
-                variables.Add(nameof(KN), KN);
-                variables.Add(nameof(KSH), KSH);
-
-                string AExpression = "W / (51,5 * P1 * Kd * Kb * Kc * KN * KSH)";
-
-                CalculationEngine engine = new CalculationEngine();
-                area = Area.FromSquareInches(engine.Calculate(AExpression, variables));
-                return area.SquareMillimeters;                
-            }
-            catch (Exception)
-            {
-                return double.NaN;
-            }
-            finally
-            {
-                gil.Dispose();
-            }
-
-        }
 
         #region Methods
         /// <summary>
@@ -306,6 +283,47 @@ namespace API520.ViewModel
                 return (0.1906 * psia - 1000) / (0.2292 * psia - 1061);
             else
                 return double.NaN;            
+        }
+
+        public double GetDischargeArea()
+        {
+            //Pressure pressure = Pressure.FromBars(P1_SI);
+            //MassFlow massFlow = MassFlow.FromKilogramsPerSecond(W_SI);
+            Area area;
+
+            double W_USC = _massFlow.PoundsPerHour;
+            double P1_USC = _p1.PoundsForcePerSquareInch;
+
+            Environment.SetEnvironmentVariable("PYTHONNET_PYDLL", PythonDllPath);
+            PythonEngine.Initialize();
+            var gil = Py.GIL();
+            try
+            {
+
+                Dictionary<string, double> variables = new Dictionary<string, double>();
+                variables.Add("W", W_USC);
+                variables.Add("P1", P1_USC);
+                variables.Add(nameof(Kd), Kd);
+                variables.Add(nameof(Kb), Kb);
+                variables.Add(nameof(Kc), Kc);
+                variables.Add(nameof(KN), KN);
+                variables.Add(nameof(KSH), KSH);
+
+                string AExpression = "W / (51,5 * P1 * Kd * Kb * Kc * KN * KSH)";
+
+                CalculationEngine engine = new CalculationEngine();
+                area = Area.FromSquareInches(engine.Calculate(AExpression, variables));
+                return area.SquareMillimeters;
+            }
+            catch (Exception)
+            {
+                return double.NaN;
+            }
+            finally
+            {
+                gil.Dispose();
+            }
+
         }
         #endregion
 

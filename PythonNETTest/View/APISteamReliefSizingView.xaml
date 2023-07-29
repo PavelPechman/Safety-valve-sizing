@@ -5,7 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:API520.View"
              mc:Ignorable="d" 
-             d:DesignHeight="450" d:DesignWidth="800">
+             d:DesignHeight="450" d:DesignWidth="400">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition/>
@@ -14,13 +14,16 @@
             <RowDefinition/>
             <RowDefinition/>
             <RowDefinition/>
+            <RowDefinition/>
+            <RowDefinition/>
+            <RowDefinition/>
+            <RowDefinition/>
+            <RowDefinition/>
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition/>
-            <ColumnDefinition/>
-            <ColumnDefinition/>
-            <ColumnDefinition/>
-            <ColumnDefinition/>
+            <ColumnDefinition Width="2*"/>
+            <ColumnDefinition Width="1*"/>
+            <ColumnDefinition Width="2*"/>
         </Grid.ColumnDefinitions>
 
         <TextBlock Grid.Row="0" Grid.Column="0"
@@ -28,7 +31,7 @@
                    Margin="5"/>
         <TextBox x:Name="TemperatureTBox"
                  Grid.Row="0"  Grid.Column="1"
-                 Text="{Binding T_SI, StringFormat={}{0:0.##}, ConverterCulture=cs-CZ}"
+                 Text="{Binding Temperature_SI, StringFormat={}{0:0.##}, ConverterCulture=cs-CZ}"
                  PreviewTextInput="NumberValidationTextBox"
                  Margin="5"/>
 
@@ -37,7 +40,7 @@
                    Margin="5"/>
         <TextBox x:Name="SetPressureTBox"
                  Grid.Row="1" Grid.Column="1"
-                 Text="{Binding PSet, StringFormat={}{0:0.##}, ConverterCulture=cs-CZ}"
+                 Text="{Binding PSet_SI, StringFormat={}{0:0.##}, ConverterCulture=cs-CZ}"
                  PreviewTextInput="NumberValidationTextBox"
                  Margin="5"/>
 
@@ -46,7 +49,7 @@
                    Margin="5"/>
         <TextBox x:Name="FlowRateTBox"
                  Grid.Row="2" Grid.Column="1"
-                 Text="{Binding W_SI, StringFormat={}{0:0.##}, ConverterCulture=cs-CZ}"
+                 Text="{Binding MassFlow_SI, StringFormat={}{0:0.##}, ConverterCulture=cs-CZ}"
                  PreviewTextInput="NumberValidationTextBox"
                  Margin="5"/>
 
@@ -55,7 +58,7 @@
                    Margin="5"/>
         <TextBox x:Name="EnthalpyTBox"
                  Grid.Row="3" Grid.Column="1"
-                 Text="{Binding H_SI, StringFormat={}{0:0.##}, ConverterCulture=cs-CZ}"
+                 Text="{Binding Enthalpy_SI, StringFormat={}{0:0.##}, ConverterCulture=cs-CZ}"
                  PreviewTextInput="NumberValidationTextBox"
                  IsEnabled="False"
                  Margin="5"/>
@@ -65,12 +68,12 @@
                    Margin="5"/>
         <TextBox x:Name="DrynessTBox"
                  Grid.Row="4" Grid.Column="1"
-                 Text="{Binding X_SI, StringFormat={}{0:0.##}, ConverterCulture=cs-CZ}"
+                 Text="{Binding VapourFraction, StringFormat={}{0:0.##}, ConverterCulture=cs-CZ}"
                  PreviewTextInput="NumberValidationTextBox"
                  IsEnabled="False"
                  Margin="5"/>
 
-        <TextBlock Grid.Row="0" Grid.Column="2"
+        <TextBlock Grid.Row="5" Grid.Column="0"
                    Margin="5">
             K<Run BaselineAlignment="Subscript">d</Run> [-]
         </TextBlock>
@@ -78,10 +81,10 @@
                  Text="{Binding Kd, StringFormat={}{0:0.##}, ConverterCulture=cs-CZ}"
                  ToolTip="0,62 for rupture disc sizing"
                  PreviewTextInput="NumberValidationTextBox"
-                 Grid.Row="0" Grid.Column="3"
+                 Grid.Row="5" Grid.Column="1"
                  Margin="5"/>
 
-        <TextBlock Grid.Row="1" Grid.Column="2"
+        <TextBlock Grid.Row="6" Grid.Column="0"
                    Margin="5">
             K<Run BaselineAlignment="Subscript">b</Run> [-]
         </TextBlock>
@@ -89,10 +92,10 @@
                  Text="{Binding Kb, StringFormat={}{0:0.##}, ConverterCulture=cs-CZ}"
                  ToolTip="for balanced bellows valves calculate from figure (30) of API 520"
                  PreviewTextInput="NumberValidationTextBox"
-                 Grid.Row="1" Grid.Column="3"
+                 Grid.Row="6" Grid.Column="1"
                  Margin="5"/>
 
-        <TextBlock Grid.Row="2" Grid.Column="2"
+        <TextBlock Grid.Row="7" Grid.Column="0"
                    Margin="5">
             K<Run BaselineAlignment="Subscript">c</Run> [-]
         </TextBlock>
@@ -100,10 +103,10 @@
                  Text="{Binding Kc, StringFormat={}{0:0.##}, ConverterCulture=cs-CZ}"
                  ToolTip="0,9 with upstream rupture disc"
                  PreviewTextInput="NumberValidationTextBox"
-                 Grid.Row="2" Grid.Column="3"
+                 Grid.Row="7" Grid.Column="1"
                  Margin="5"/>
 
-        <TextBlock Grid.Row="3" Grid.Column="2"
+        <TextBlock Grid.Row="8" Grid.Column="0"
                    Margin="5">
             K<Run BaselineAlignment="Subscript">N</Run> [-]
         </TextBlock>
@@ -111,10 +114,10 @@
                  Text="{Binding KN, StringFormat={}{0:0.##}, ConverterCulture=cs-CZ}"
                  IsEnabled="False"
                  PreviewTextInput="NumberValidationTextBox"
-                 Grid.Row="3" Grid.Column="3"
+                 Grid.Row="8" Grid.Column="1"
                  Margin="5"/>
 
-        <TextBlock Grid.Row="4" Grid.Column="2"
+        <TextBlock Grid.Row="9" Grid.Column="0"
                    Margin="5">
             K<Run BaselineAlignment="Subscript">SH</Run> [-]
         </TextBlock>
@@ -122,12 +125,18 @@
                  Text="{Binding KSH, StringFormat={}{0:0.##}, ConverterCulture=cs-CZ}"
                  IsEnabled="False"
                  PreviewTextInput="NumberValidationTextBox"
-                 Grid.Row="4" Grid.Column="3"
+                 Grid.Row="9" Grid.Column="1"
                  Margin="5"/>
 
-        <Button x:Name="TestButton"
-                Grid.Row="5" Grid.Column="0"
-                Click="TestButton_Click"/>
+        <TextBlock Grid.Row="10" Grid.Column="0"
+                   Text="Discharge area [mm2]"
+                   Margin="5"/>
+        <TextBox x:Name="DischargeAreaTBox"
+                 Grid.Row="10" Grid.Column="1"
+                 Text="{Binding DischargeArea_SI, StringFormat={}{0:0.##}, ConverterCulture=cs-CZ}"
+                 PreviewTextInput="NumberValidationTextBox"
+                 IsEnabled="False"
+                 Margin="5"/>
 
     </Grid>
 </UserControl>

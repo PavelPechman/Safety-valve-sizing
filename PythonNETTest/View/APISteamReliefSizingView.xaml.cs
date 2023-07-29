@@ -16,6 +16,7 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using UnitsNet;
 using System.ComponentModel;
+using System.Diagnostics;
 
 namespace API520.View
 {
@@ -37,9 +38,9 @@ namespace API520.View
 
         private void APICalc_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
-            if (e.PropertyName == "H_SI" && double.IsNaN(APICalc.H_SI))
+            if (e.PropertyName == nameof(APICalc.Enthalpy_SI) && APICalc.Enthalpy_SI == -1)
                 EnthalpyTBox.IsEnabled = true;
-            else if (e.PropertyName == "H_SI" && !double.IsNaN(APICalc.H_SI))
+            else if (e.PropertyName == nameof(APICalc.Enthalpy_SI) && !(APICalc.Enthalpy_SI == -1))
                 EnthalpyTBox.IsEnabled = false;
         }
 
@@ -47,11 +48,6 @@ namespace API520.View
         {
             Regex regex = new Regex("[^0-9,-]+");
             e.Handled = regex.IsMatch(e.Text);
-        }
-
-        private void TestButton_Click(object sender, RoutedEventArgs e)
-        {
-            MessageBox.Show(APICalc.GetDischargeArea().ToString());
         }
     }
 }
